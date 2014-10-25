@@ -18,7 +18,8 @@
 % Licensed under the Simplified BSD License [see external/bsd.txt]
 
 %% extract training and testing images and ground truth
-dataDir = 'C:\temp\data-USA\';
+% dataDir = 'C:\temp\data-USA\';
+dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 for s=1:2
   if(s==1), type='train'; else type='test'; end
   if(exist([dataDir type '/annotations'],'dir')), continue; end
@@ -52,16 +53,17 @@ imgIdx = length(imgNms);
 imgIdx = 1;
 while imgIdx<length(imgNms)
     I=imread(imgNms{imgIdx}); tic, bbs=acfDetect(I,detector); toc
-    figure(1); im(I); 
+    fh = figure(1); im(I); 
     bbApply('draw',bbs); %pause(.1);
-    while calllib('user32','GetAsyncKeyState',int32(1)) == 0 ...
-        && calllib('user32','GetAsyncKeyState',int32(2)) == 0
-        pause(.1)
+    kkey = get(gcf,'CurrentCharacter');
+    while isempty(kkey) || ~(kkey == 29 || kkey == 28)
+        pause(0.1);
+        kkey = get(gcf,'CurrentCharacter');
     end
-    if calllib('user32','GetAsyncKeyState',int32(2)) ~= 0
-        imgIdx = imgIdx - 1;
-    elseif calllib('user32','GetAsyncKeyState',int32(1)) ~= 0
+    if kkey == 29
         imgIdx = imgIdx + 1;
+    elseif kkey == 28
+        imgIdx = imgIdx - 1;
     end
 end
 
