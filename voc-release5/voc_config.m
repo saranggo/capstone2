@@ -19,7 +19,7 @@ function conf = voc_config(varargin)
 % Please read the next few lines
 
 % Parent directory that everything (model cache, VOCdevkit) is under
-BASE_DIR    = 'H:\Private\Fall 14\Capstone2';
+BASE_DIR    = '.';
 
 % PASCAL dataset year to use
 PASCAL_YEAR = '2010';

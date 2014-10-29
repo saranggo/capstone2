@@ -9,7 +9,7 @@ model = model;
 imgNms=bbGt('getFiles',{[dataDir 'test/images']});
 n=length(imgNms)
 bbs = cell(n,1);
-parfor imgIdx=1:n
+for imgIdx=1:n
     bbs{imgIdx} = test(imgNms{imgIdx}, model, -0.3);
     disp(imgIdx);
     %pause(0.1);

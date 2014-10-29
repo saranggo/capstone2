@@ -40,6 +40,9 @@ void process(void *thread_arg) {
         for (int xp = 0; xp < B_dims[1]; xp++) {
           float *A_off = A_src + (x+xp)*A_dims[0] + y;
           float *B_off = B_src + xp*B_dims[0];
+//          for (int yp = 0; yp < B_dims[0]; yp++) {
+//            val += *(A_off++) * *(B_off++);
+//          }
           switch(B_dims[0]) {
             case 20: val += A_off[19] * B_off[19];
             case 19: val += A_off[18] * B_off[18];
@@ -62,11 +65,11 @@ void process(void *thread_arg) {
             case 2: val += A_off[1] * B_off[1];
             case 1: val += A_off[0] * B_off[0];
               break;
-            default:	    	      
+            default:
               for (int yp = 0; yp < B_dims[0]; yp++) {
                 val += *(A_off++) * *(B_off++);
               }
-	        }
+          }
 	      }
 	      *(dst++) += val;
       }
