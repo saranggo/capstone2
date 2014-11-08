@@ -180,6 +180,9 @@ for level = 1:length(pyra.feat)
   % compute filter response for all filters at this level
   if size(pyra.feat{level},3) == 32
     % Faster SSE version (fconvsse.cc) that can only handle 32-dim features
+    % TODO: no need to fconv 
+    %   roots at levels below: lowest + interval
+    %   parts at levels above: highest - interval
     r = fconv(pyra.feat{level}, filters, 1, length(filters));
   else
     % More general convolution code to handle non-32-dim features

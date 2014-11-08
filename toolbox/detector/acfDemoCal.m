@@ -56,9 +56,13 @@ while imgIdx<length(imgNms)
     fh = figure(1); im(I); 
     bbApply('draw',bbs); %pause(.1);
     kkey = get(gcf,'CurrentCharacter');
-    while isempty(kkey) || ~(kkey == 29 || kkey == 28)
+    while isempty(kkey)
         pause(0.1);
         kkey = get(gcf,'CurrentCharacter');
+    end
+    if ~isempty(bbs)
+        disp(bbs);
+        pause(0.1);
     end
     if kkey == 29
         imgIdx = imgIdx + 1;

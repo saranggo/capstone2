@@ -1,8 +1,8 @@
 % Prepares your matlab workspace for using voc-release5.
-global G_STARTUP;
+global V_STARTUP;
 
-if isempty(G_STARTUP)
-	G_STARTUP = true;
+if isempty(V_STARTUP)
+	V_STARTUP = true;
 
 	% Avoiding addpath(genpath('.')) because .git includes
 	% a VERY large number of subdirectories, which makes 
