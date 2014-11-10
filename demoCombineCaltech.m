@@ -9,8 +9,8 @@ detector = t.detector;
 detector = acfModify(detector,'cascThr',-1,'cascCal',-.005);
 
 %% load dpm model
-%t=load('voc-release5/VOC2010/person_final');
-t=load('VOC2010/person_grammar_final'); t.model.class = 'person grammar';
+t=load('voc-release5/VOC2010/person_final');
+%t=load('VOC2010/person_grammar_final'); t.model.class = 'person grammar';
 dpm_model = t.model;
 
 %% run on a images
