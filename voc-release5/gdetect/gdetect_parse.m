@@ -26,9 +26,9 @@ S = [];
 for level = 1:pyra.num_levels
   score = model.symbols(model.start).score{level};
   tmpI = find(score > thresh);
-  if ~isempty(tmpI)
-      disp(level);
-  end
+%   if ~isempty(tmpI)
+%       disp(level);
+%   end
   [tmpY, tmpX] = ind2sub(size(score), tmpI);
   X = [X; tmpX];
   Y = [Y; tmpY];

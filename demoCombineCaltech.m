@@ -1,77 +1,169 @@
 function demoCombineCaltech()
 init_env;
 dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
-resultFile = 'results/CombineCaltechDets.txt';
+resultFile = 'results/CombineCaltech';
+silent = 1;
+reapply = 1;
+rewrite = 0;
+time = 1;
+showBBTest = 1;
+showAlertTest = 1;
 
 %% load acf detector
 t=load('models/AcfCaltechDetector');
 detector = t.detector;
-detector = acfModify(detector,'cascThr',-1,'cascCal',-.005);
+detector = acfModify(detector,'cascThr',-1,'cascCal',-.0049);
 
 %% load dpm model
-t=load('voc-release5/VOC2010/person_final');
+t=load('voc-release5/caltechped_final');
+%t=load('voc-release5/VOC2010/person_final');
 %t=load('VOC2010/person_grammar_final'); t.model.class = 'person grammar';
 dpm_model = t.model;
 
 %% run on a images
+bbsNm=[resultFile 'Dets.txt'];
 imgNms=bbGt('getFiles',{[dataDir 'test/images']});
-n = length(imgNms);
-bbs = cell(n,1);
-bbsCombined = cell(n,1);
-imgIdx = 740; %55, 333, 369, 530, 740      :900
-while imgIdx<length(imgNms)
-    I=imread(imgNms{imgIdx}); 
-    fh = figure(1); im(I); 
-    tic, bbs{imgIdx}=acfDetect(I,detector); toc
-    bbApply('draw',bbs{imgIdx},'r');
-    tic, bbsCombined{imgIdx}=postProcess(I,dpm_model,bbs{imgIdx}); toc
-    bbApply('draw',bbsCombined{imgIdx},'g'); %pause(.1);
-    kkey = get(gcf,'CurrentCharacter');
-    while isempty(kkey)
-        pause(0.1);
-        kkey = get(gcf,'CurrentCharacter');
+if(reapply && rewrite && exist(bbsNm,'file')), delete(bbsNm); end
+if(reapply || ~exist(bbsNm,'file'))
+    n = length(imgNms);
+    bbs = cell(n,1);
+    bbsCombined = cell(n,1);
+    
+    %load n1; load p1; load p2;
+    
+    imgIdx = 1; %55, 333, 369, 530, 740      :900
+    if silent, imgIdx = 1; end
+    while imgIdx<length(imgNms)
+        I=imread(imgNms{imgIdx});
+        %I=imread(imgNms{p2(imgIdx,1)});
+        if ~silent, fh = figure(1); im(I); end
+        if time, tic; end
+        bbs{imgIdx}=acfDetect(I,detector); 
+        if time, toc; end
+        if ~silent, bbApply('draw',bbs{imgIdx},'r'); end
+        if time, tic, end
+        bbsCombined{imgIdx}=postProcess(I,dpm_model,bbs{imgIdx},23,-1,220);
+        if time, toc; end
+        if ~silent, bbApply('draw',bbsCombined{imgIdx},'g'); end %pause(.1);
+        if ~silent
+            kkey = get(gcf,'CurrentCharacter');
+            while isempty(kkey)
+                pause(0.1);
+                kkey = get(gcf,'CurrentCharacter');
+            end
+            if ~isempty(bbs{imgIdx})
+                %disp(bbs{imgIdx});
+                %pause(0.1);
+            end
+            if kkey == 29, imgIdx = imgIdx + 1
+            elseif kkey == 28, imgIdx = imgIdx - 1
+            end
+        else
+            imgIdx = imgIdx + 1;
+            disp(imgIdx);
+        end
     end
-    if ~isempty(bbs{imgIdx})
-        %disp(bbs{imgIdx});
-        %pause(0.1);
+    
+    for i=1:n
+        if ~isempty(bbs{i}), bbs{i}=[ones(size(bbs{i},1),1)*i bbs{i}]; 
+        else bbs{i}=ones(0,6); end
     end
-    if kkey == 29, imgIdx = imgIdx + 1;
-    elseif kkey == 28, imgIdx = imgIdx - 1;
+    if rewrite || ~exist(bbsNm,'file')
+        bbs=cell2mat(bbs);
+        d=fileparts(bbsNm); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
+        dlmwrite(bbsNm,bbs);
     end
-end
-for i=1:n
-    if ~isempty(bbs{i}), bbs{i}=[ones(size(bbs{i},1),1)*i bbs{i}]; 
-    else bbs{i}=ones(0,6); end
-end
-bbs=cell2mat(bbs);
-d=fileparts(resultFile); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
-dlmwrite(resultFile,bbs);
+    
+    bbs = bbsCombined;
+    bbsNm=[resultFile 'Comb' 'Dets.txt'];
+    if(exist(bbsNm,'file')), delete(bbsNm); end
+    for i=1:n
+        if ~isempty(bbs{i}), bbs{i}=[ones(size(bbs{i},1),1)*i bbs{i}]; 
+        else bbs{i}=ones(0,6); end
+    end
+    if rewrite || ~exist(bbsNm,'file')
+        bbs=cell2mat(bbs);
+        d=fileparts(bbsNm); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
+        dlmwrite(bbsNm,bbs);
+    end
 end
 
-function bbs_res = postProcess(I,model,bbs)
+%% test detector and plot roc (see acfTest)
+if showBBTest, [~,~,gt,dt]=acfTest('name',resultFile,'imgDir',[dataDir 'test/images'],...
+  'gtDir',[dataDir 'test/annotations'],'pLoad',[{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
+  'hRng',[50 inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]],...
+  'show',2,'color','g','reapply',0); 
+end
+
+%optionally show top false positives ('type' can be 'fp','fn','tp','dt')
+if( 0 ), bbGt('cropRes',gt,dt,imgNms,'type','fn','n',50,...
+    'show',3,'dims',[20.5, 50]); end
+
+%test detector and plot roc (see acfTest)
+hold on;
+if showBBTest, [~,~,gt,dt]=acfTest('name',[resultFile 'Comb'],'imgDir',[dataDir 'test/images'],...
+  'gtDir',[dataDir 'test/annotations'],'pLoad',[{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
+  'hRng',[50 inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]],...
+  'show',2,'color','b','reapply',0);
+end
+
+%optionally show top false positives ('type' can be 'fp','fn','tp','dt')
+if( 0 ), bbGt('cropRes',gt,dt,imgNms,'type','fn','n',50,...
+    'show',5,'dims',[20.5, 50]); end
+
+%% check accuracy/recall of alarms
+if showAlertTest
+    gtFile = 'labels/gtLabels.txt';
+    dtFile1 = 'results/CombineCaltechDets.txt';
+    dtFile2 = 'results/CombineCaltechCombDets.txt';
+    [gt,dt] = alertHelper('loadAlerts',gtFile,dtFile1);
+    [prec1, tpr1, fpr1, thresh1] = alertHelper('compPlots',gt,dt,'b-x',0);
+    [gt,dt] = alertHelper('loadAlerts',gtFile,dtFile2);
+    [prec2, tpr2, fpr2, thresh2] = alertHelper('compPlots',gt,dt,'g-o',1);
+end
+end
+
+function bbs_res = postProcess(I,model,bbs,thresh_ig,thresh_dpm,horizon)
 if size(bbs,1) == 0
     bbs_res=bbs;
     return;
 end
 % apply threshold to bbs
+[h,~,~]=size(I);
+lim_up = horizon + h*0.1;
+lim_down = horizon - h*0.1;
+bbs = bbs(lim_down<bbs(:,2)+bbs(:,4)*2/3 & lim_up>bbs(:,2)+bbs(:,4)/3,:);
+
 % run dpm only on first n highest scored bbs
 bbs_res=zeros(0,5);
 for bbIdx=1:size(bbs,1)
+    if(bbs(bbIdx,5) > thresh_ig)
+        maxScore_ig = 99.2;
+        maxScore_dpm = 2.75;
+        bbs_res(end+1,:)=bbs(bbIdx,:);
+        bbs_res(end,5)=((bbs_res(end,5)-thresh_ig)/(maxScore_ig-thresh_ig))...
+                        *(maxScore_dpm-thresh_dpm) + thresh_dpm;
+        continue;
+    end
     I_bb = I(max(1,bbs(bbIdx,2)):min(size(I,1),bbs(bbIdx,2)+bbs(bbIdx,4)),...
              max(1,bbs(bbIdx,1)):min(size(I,2),bbs(bbIdx,1)+bbs(bbIdx,3)),:);
-    scale = 40/size(I_bb,2);
+    scale = 41/size(I_bb,2);
     I_bb = imresize(I_bb,scale);
-    [ds, bs] = imgdetect(I_bb, model, -0.75);
+    [ds, bs] = imgdetect(I_bb, model, thresh_dpm);
     if ~isempty(bs)
         if model.type == model_types.Grammar
             bs = [ds(:,1:4) bs];
         end
         if model.type == model_types.MixStar
             % get bounding boxes
-            bbox = bboxpred_get(model.bboxpred, ds, reduceboxes(model, bs));
+            if isfield(model, 'bboxpred')
+                bbox = bboxpred_get(model.bboxpred, ds, reduceboxes(model, bs));
+            else
+                bbox = ds(:,[1:4,6]);
+            end
             bbox = clipboxes(I, bbox);
             top = nms(bbox, 0.5);
-            bbs_res(end+1,:) = bbox(top,:);
+            bbs_res(end+1,:) = bbox(top(1),:);
             %showboxes(im, bbox_res);
         else
             top = nms(ds, 0.5);

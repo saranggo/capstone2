@@ -1,5 +1,5 @@
 function demoCaltech()
-startup;
+init_env;
 
 dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 resultFile = 'results/caltechPed';
@@ -9,7 +9,7 @@ pLoad={'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}};
 bbsNm=[resultFile 'Dets.txt'];
 if(reapply && exist(bbsNm,'file')), delete(bbsNm); end
 if(reapply || ~exist(bbsNm,'file'))
-    load('VOC2010/person_final');
+    load('caltechped_final');
     
     % load('VOC2010/person_grammar_final');
     % model.class = 'person grammar';
@@ -18,15 +18,20 @@ if(reapply || ~exist(bbsNm,'file'))
     imgNms=bbGt('getFiles',{[dataDir 'test/images']});
     n=length(imgNms)
     bbs = cell(n,1);
-    for imgIdx=55:n
+    parfor imgIdx=1:n
         bbs{imgIdx} = test(imgNms{imgIdx}, model, -0.6);
         disp(imgIdx);
         %pause(0.1);
-        break;
+        %break;
     end
     for i=1:n
-        if ~isempty(bbs{i}), bbs{i}=[ones(size(bbs{i},1),1)*i bbs{i}]; 
-        else bbs{i}=ones(0,6); end
+        if ~isempty(bbs{i})
+            bbs{i}=[ones(size(bbs{i},1),1)*i bbs{i}]; 
+            % convert voc5 dt bbs into piotr format
+            bbs{i}(3) = bbs{i}(3) - bbs{i}(1);
+            bbs{i}(4) = bbs{i}(4) - bbs{i}(2);
+        else bbs{i}=ones(0,6); 
+        end
     end
     bbs=cell2mat(bbs);
     d=fileparts(bbsNm); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
@@ -34,15 +39,9 @@ if(reapply || ~exist(bbsNm,'file'))
 end
 
 [gt,dt] = bbGt('loadAll',[dataDir 'test/annotations'],bbsNm,pLoad);
-% convert voc5 bbs into piotr format
-for i=1:length(dt)
-    if(~isempty(dt{i}))
-        dt{i}(3) = dt{i}(3) - dt{i}(1);
-        dt{i}(4) = dt{i}(4) - dt{i}(2);
-    end
-end
 if(~exist('imgNms')), imgNms=bbGt('getFiles',{[dataDir 'test/images']}); end
 imgIdx = 1;
+imgIdx = length(imgNms);
 while imgIdx<length(imgNms)
     I=imread(imgNms{imgIdx});
     fh = figure(1); 
@@ -99,13 +98,21 @@ if ~isempty(bs)
     %clf;
     if model.type == model_types.MixStar
         % get bounding boxes
-        bbox = bboxpred_get(model.bboxpred, ds, reduceboxes(model, bs));
+        if isfield(model, 'bboxpred')
+            bbox = bboxpred_get(model.bboxpred, ds, reduceboxes(model, bs));
+        else
+            bbox = ds(:,[1:4,6]);
+        end
         bbox = clipboxes(im, bbox);
         top = nms(bbox, 0.5);
-        bbox_res = bbox(top,:);
+        try
+            bbox_res = bbox(top(1),:);
+        catch
+            disp('ERR');
+        end
         %showboxes(im, bbox_res);
     else
-        bbox_res = reduceboxes(model, bs(top,:));
+        bbox_res = reduceboxes(model, ds(top,:));
         %showboxes(im, bbox_res); 
     end
 end

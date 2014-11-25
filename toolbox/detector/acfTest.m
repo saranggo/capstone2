@@ -35,8 +35,8 @@ function [miss,roc,gt,dt] = acfTest( varargin )
 % get parameters
 dfs={ 'name','REQ', 'imgDir','REQ', 'gtDir','REQ', 'pLoad',[], ...
   'thr',.5,'mul',0, 'reapply',0, 'ref',10.^(-2:.25:0), ...
-  'lims',[3.1e-3 1e1 .05 1], 'show',0 };
-[name,imgDir,gtDir,pLoad,thr,mul,reapply,ref,lims,show] = ...
+  'lims',[3.1e-3 1e1 .05 1], 'show',0, 'color', 'g' };
+[name,imgDir,gtDir,pLoad,thr,mul,reapply,ref,lims,show,color] = ...
   getPrmDflt(varargin,dfs,1);
 
 ref=10.^(-2:.25:2);
@@ -54,6 +54,15 @@ end
 
 % run evaluation using bbGt
 [gt,dt] = bbGt('loadAll',gtDir,bbsNm,pLoad);
+if 0
+    % convert voc5 bbs into piotr format
+    for i=1:length(dt)
+        if(~isempty(dt{i}))
+            dt{i}(3) = dt{i}(3) - dt{i}(1);
+            dt{i}(4) = dt{i}(4) - dt{i}(2);
+        end
+    end
+end
 [gt,dt] = bbGt('evalRes',gt,dt,thr,mul);
 [fp,tp,score,miss] = bbGt('compRoc',gt,dt,1,ref);
 lmiss=exp(mean(log(max(1e-10,1-miss)))); roc=[score fp tp];
@@ -61,8 +70,8 @@ lmiss=exp(mean(log(max(1e-10,1-miss)))); roc=[score fp tp];
 % optionally plot roc
 if( ~show ), return; end
 figure(show); plotRoc([fp tp],'logx',1,'logy',1,'xLbl','fppi',...
-  'lims',lims,'color','g','smooth',1,'fpTarget',ref);
-title(sprintf('log-average miss rate = %.2f%%',lmiss*100));
+  'lims',lims,'color',color,'smooth',1,'fpTarget',ref);
+%title(sprintf('log-average miss rate = %.2f%%',lmiss*100));
 savefig([name 'Roc'],show,'png');
 
 end

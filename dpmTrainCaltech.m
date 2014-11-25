@@ -191,6 +191,8 @@ catch
 end
 
 save([cachedir cls '_final'], 'model');
+
+model = bboxpred_train(cls, method);
 end
 
 
