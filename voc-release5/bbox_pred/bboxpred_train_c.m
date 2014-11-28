@@ -1,4 +1,4 @@
-function model = bboxpred_train(name, method)
+function model = bboxpred_train_c(conf, name, method)
 % Train a bounding box predictor.
 %   model = bboxpred_train(name, year, method)
 %
@@ -9,9 +9,7 @@ function model = bboxpred_train(name, method)
 %   name    Object class
 %   method  Regression method (default is least squares regression)
 
-conf = voc_config();
-
-if nargin < 3
+if nargin < 4
   method = 'default';
 end
 
@@ -23,7 +21,7 @@ try
   bboxpred = model.bboxpred;
 catch
   % get training data
-  [ds_all, bs_all, targets] = bboxpred_data(name);
+  [ds_all, bs_all, targets] = bboxpred_data_c(conf, name);
   % train bbox predictor
   fprintf('%s %s: bbox predictor training...', procid(), name);
   nrules = length(model.rules{model.start});

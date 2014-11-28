@@ -89,7 +89,7 @@ cachedir = conf.paths.model_dir;
 % Load the training data
 [pos, neg, impos] = caltech_data(conf);
 
-n=2;
+n=1;
 cls='caltechped';
 note='caltech pedestrian dataset';
 % Split foreground examples into n groups by aspect ratio
@@ -192,7 +192,9 @@ end
 
 save([cachedir cls '_final'], 'model');
 
-model = bboxpred_train(cls, method);
+method='default';
+model = bboxpred_train_c(conf, cls, method);
+save([cachedir cls '_final_bbp'], 'model');
 end
 
 

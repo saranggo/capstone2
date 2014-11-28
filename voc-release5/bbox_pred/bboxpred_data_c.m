@@ -1,4 +1,4 @@
-function [ds_all, bs_all, targets] = bboxpred_data(name)
+function [ds_all, bs_all, targets] = bboxpred_data_c(conf, name)
 % Collect training data for bounding box prediction.
 %   [ds, bs, targets] = bboxpred_data(name)
 %
@@ -13,15 +13,13 @@ function [ds_all, bs_all, targets] = bboxpred_data(name)
 % Argument
 %   name      Object class
 
-conf = voc_config();
-
 try
   load([conf.paths.model_dir name '_bboxdata']);
 catch
   % load final model for class
   load([conf.paths.model_dir name '_final']);
   % get training data
-  pos = pascal_data(model.class, model.year);
+  [pos, ~, ~] = caltech_data(conf);
 
   numpos = length(pos);
   model.interval = conf.training.interval_fg;

@@ -3,16 +3,20 @@ init_env;
 dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 resultFile = 'results/CombineCaltech';
 silent = 1;
-reapply = 1;
+reapply = 0;
 rewrite = 0;
-time = 1;
+time = 0;
 showBBTest = 1;
 showAlertTest = 1;
+optForAlert = 1;
+horizon = 220;
+igDpmThresh = 23;
+dpmThresh = -0.75;
 
 %% load acf detector
 t=load('models/AcfCaltechDetector');
 detector = t.detector;
-detector = acfModify(detector,'cascThr',-1,'cascCal',-.0049);
+detector = acfModify(detector,'cascThr',-1,'cascCal',-.005);
 
 %% load dpm model
 t=load('voc-release5/caltechped_final');
@@ -42,7 +46,8 @@ if(reapply || ~exist(bbsNm,'file'))
         if time, toc; end
         if ~silent, bbApply('draw',bbs{imgIdx},'r'); end
         if time, tic, end
-        bbsCombined{imgIdx}=postProcess(I,dpm_model,bbs{imgIdx},23,-1,220);
+        bbsCombined{imgIdx}=postProcess(I,dpm_model,bbs{imgIdx},...
+                            igDpmThresh,dpmThresh,horizon,optForAlert);
         if time, toc; end
         if ~silent, bbApply('draw',bbsCombined{imgIdx},'g'); end %pause(.1);
         if ~silent
@@ -123,7 +128,7 @@ if showAlertTest
 end
 end
 
-function bbs_res = postProcess(I,model,bbs,thresh_ig,thresh_dpm,horizon)
+function bbs_res = postProcess(I,model,bbs,thresh_ig,thresh_dpm,horizon,optForAlert)
 if size(bbs,1) == 0
     bbs_res=bbs;
     return;
@@ -134,7 +139,7 @@ lim_up = horizon + h*0.1;
 lim_down = horizon - h*0.1;
 bbs = bbs(lim_down<bbs(:,2)+bbs(:,4)*2/3 & lim_up>bbs(:,2)+bbs(:,4)/3,:);
 
-% run dpm only on first n highest scored bbs
+% run dpm until 1 positive match is found
 bbs_res=zeros(0,5);
 for bbIdx=1:size(bbs,1)
     if(bbs(bbIdx,5) > thresh_ig)
@@ -143,7 +148,7 @@ for bbIdx=1:size(bbs,1)
         bbs_res(end+1,:)=bbs(bbIdx,:);
         bbs_res(end,5)=((bbs_res(end,5)-thresh_ig)/(maxScore_ig-thresh_ig))...
                         *(maxScore_dpm-thresh_dpm) + thresh_dpm;
-        continue;
+        if optForAlert, break; else continue; end
     end
     I_bb = I(max(1,bbs(bbIdx,2)):min(size(I,1),bbs(bbIdx,2)+bbs(bbIdx,4)),...
              max(1,bbs(bbIdx,1)):min(size(I,2),bbs(bbIdx,1)+bbs(bbIdx,3)),:);
@@ -175,6 +180,7 @@ for bbIdx=1:size(bbs,1)
         bbs_res(end,4)=bbs_res(end,4)-bbs_res(end,2);
         bbs_res(end,1)=bbs_res(end,1)+bbs(bbIdx,1);
         bbs_res(end,2)=bbs_res(end,2)+bbs(bbIdx,2);
+        if optForAlert, break; end
     elseif ~isempty(ds)
         top = nms(ds, 0.5);
         bbs_res(end+1,:) = ds(top,:);
@@ -182,6 +188,7 @@ for bbIdx=1:size(bbs,1)
         bbs_res(end,4)=bbs_res(end,4)-bbs_res(end,2);
         bbs_res(end,1)=bbs_res(end,1)+bbs(bbIdx,1);
         bbs_res(end,2)=bbs_res(end,2)+bbs(bbIdx,2);
+        if optForAlert, break; end
     else
         % this returns the original deteciton, if dpm fails
         %bbs_res=bbs;
