@@ -16,7 +16,7 @@ dt=double(dt);
 end
 
 function [prec, tpr, fpr, thresh] = compPlots(gt,dt,style,hold)
-target=gt(:,2);
+target=gt(:,end);
 n=length(target);
 ids=dt(:,1); assert(max(ids)<=n);
 scores=[(1:n)',(zeros(n,1) + min(dt(:,2)))]; 
@@ -26,8 +26,8 @@ for i=1:n
         scores(i,2)=max(scores(i,2),tmp);
     end
 end
-gt0=gt(:,2)==0;
-gt1=gt(:,2)==1;
+gt0=gt(:,end)==0;
+gt1=gt(:,end)==1;
 n=scores(gt0,:);
 p=scores(gt1,:);
 n1=n(n(:,2)>-0.749,:);

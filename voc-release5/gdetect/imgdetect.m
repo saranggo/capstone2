@@ -16,7 +16,7 @@ if model.features.extra_octave
     %TODO
     'TODO'
 else
-    pyra.valid_levels(3:10)=zeros(8,1);
-    pyra.valid_levels(13:20)=zeros(8,1);
+    pyra.valid_levels(2:10)=zeros(9,1);
+    pyra.valid_levels(12:20)=zeros(9,1);
 end
 [ds, bs, trees] = gdetect(pyra, model, thresh);

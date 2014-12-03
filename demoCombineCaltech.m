@@ -2,19 +2,23 @@ function demoCombineCaltech()
 init_env;
 dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 resultFile = 'results/CombineCaltech';
-silent = 1;
-reapply = 0;
+gtDir = [dataDir 'test/annotations'];
+silent = 0;
+reapply = 1;
 rewrite = 0;
-time = 0;
+time = 1;
 showBBTest = 1;
 showAlertTest = 1;
-optForAlert = 1;
+optForAlert = 0;
 horizon = 220;
 igDpmThresh = 23;
 dpmThresh = -0.75;
+hMin = 50.1;
+pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
+  'hRng',[hMin inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]];
 
 %% load acf detector
-t=load('models/AcfCaltechDetector');
+t=load('models/AcfCaltechDetector_depth3_8192');
 detector = t.detector;
 detector = acfModify(detector,'cascThr',-1,'cascCal',-.005);
 
@@ -25,6 +29,7 @@ t=load('voc-release5/caltechped_final');
 dpm_model = t.model;
 
 %% run on a images
+[gt,~] = bbGt('loadAll',gtDir,[],pLoad);
 bbsNm=[resultFile 'Dets.txt'];
 imgNms=bbGt('getFiles',{[dataDir 'test/images']});
 if(reapply && rewrite && exist(bbsNm,'file')), delete(bbsNm); end
@@ -35,19 +40,19 @@ if(reapply || ~exist(bbsNm,'file'))
     
     %load n1; load p1; load p2;
     
-    imgIdx = 1; %55, 333, 369, 530, 740      :900
+    imgIdx = 7130; %55, 333, 369, 530, 740, 7130
     if silent, imgIdx = 1; end
     while imgIdx<length(imgNms)
         I=imread(imgNms{imgIdx});
         %I=imread(imgNms{p2(imgIdx,1)});
-        if ~silent, fh = figure(1); im(I); end
+        if ~silent, fh = figure(1); im(I); bbApply('draw',gt{imgIdx}(gt{imgIdx}(:,5)==0,:),'b'); end
         if time, tic; end
         bbs{imgIdx}=acfDetect(I,detector); 
         if time, toc; end
         if ~silent, bbApply('draw',bbs{imgIdx},'r'); end
         if time, tic, end
         bbsCombined{imgIdx}=postProcess(I,dpm_model,bbs{imgIdx},...
-                            igDpmThresh,dpmThresh,horizon,optForAlert);
+                            igDpmThresh,dpmThresh,hMin,horizon,optForAlert);
         if time, toc; end
         if ~silent, bbApply('draw',bbsCombined{imgIdx},'g'); end %pause(.1);
         if ~silent
@@ -94,9 +99,8 @@ if(reapply || ~exist(bbsNm,'file'))
 end
 
 %% test detector and plot roc (see acfTest)
-if showBBTest, [~,~,gt,dt]=acfTest('name',resultFile,'imgDir',[dataDir 'test/images'],...
-  'gtDir',[dataDir 'test/annotations'],'pLoad',[{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
-  'hRng',[50 inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]],...
+if showBBTest && ~optForAlert, [~,~,gt,dt]=acfTest('name',resultFile,'imgDir',[dataDir 'test/images'],...
+  'gtDir',[dataDir 'test/annotations'],'pLoad',pLoad,...
   'show',2,'color','g','reapply',0); 
 end
 
@@ -106,8 +110,8 @@ if( 0 ), bbGt('cropRes',gt,dt,imgNms,'type','fn','n',50,...
 
 %test detector and plot roc (see acfTest)
 hold on;
-if showBBTest, [~,~,gt,dt]=acfTest('name',[resultFile 'Comb'],'imgDir',[dataDir 'test/images'],...
-  'gtDir',[dataDir 'test/annotations'],'pLoad',[{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
+if showBBTest && ~optForAlert, [~,~,gt,dt]=acfTest('name',[resultFile 'Comb'],'imgDir',[dataDir 'test/images'],...
+  'gtDir',gtDir,'pLoad',[{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
   'hRng',[50 inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]],...
   'show',2,'color','b','reapply',0);
 end
@@ -117,7 +121,7 @@ if( 0 ), bbGt('cropRes',gt,dt,imgNms,'type','fn','n',50,...
     'show',5,'dims',[20.5, 50]); end
 
 %% check accuracy/recall of alarms
-if showAlertTest
+if 0 && showAlertTest   % self labeled gt alerts
     gtFile = 'labels/gtLabels.txt';
     dtFile1 = 'results/CombineCaltechDets.txt';
     dtFile2 = 'results/CombineCaltechCombDets.txt';
@@ -125,10 +129,52 @@ if showAlertTest
     [prec1, tpr1, fpr1, thresh1] = alertHelper('compPlots',gt,dt,'b-x',0);
     [gt,dt] = alertHelper('loadAlerts',gtFile,dtFile2);
     [prec2, tpr2, fpr2, thresh2] = alertHelper('compPlots',gt,dt,'g-o',1);
-end
+    subplot(1,2,1);
+    axis([0,1,0,1]);
+    subplot(1,2,2);
+    axis([0,0.1,0,1]);
 end
 
-function bbs_res = postProcess(I,model,bbs,thresh_ig,thresh_dpm,horizon,optForAlert)
+if showAlertTest
+    dtFile = [resultFile 'Dets.txt'];
+    [gt,dt] = bbGt('loadAll',gtDir,dtFile,pLoad);
+    % alertHelper expects label 0 == negative
+    gt1=[1:length(gt); zeros(1,length(gt))]';
+    for idx=1:length(gt)
+        if ~isempty(gt{idx})
+            gt1(idx,2)=prod(gt{idx}(:,5))==0;
+        end
+    end
+    dt1=[1:length(dt); inf(1,length(dt))]';
+    for idx=1:length(dt)
+        if ~isempty(dt{idx})
+            dt1(idx,2)=max(dt{idx}(:,5));
+        end
+    end
+    dt1(dt1(:,2)==Inf,2)=min(dt1(:,2));
+    
+    dtFile = [resultFile 'Comb' 'Dets.txt'];
+    [gt,dt] = bbGt('loadAll',gtDir,dtFile,pLoad);
+    dt2=[1:length(dt); inf(1,length(dt))]';
+    for idx=1:length(dt)
+        if ~isempty(dt{idx})
+            dt2(idx,2)=max(dt{idx}(:,5));
+        end
+    end
+    dt2(dt2(:,2)==Inf,2)=min(dt2(:,2));
+    
+    [prec1, tpr1, fpr1, thresh1] = alertHelper('compPlots',gt1,dt1,'b-x',0);
+    [prec2, tpr2, fpr2, thresh2] = alertHelper('compPlots',gt1,dt2,'g-o',1);
+    
+    subplot(1,2,1);
+    axis([0,1,0,1]);
+    subplot(1,2,2);
+    axis([0,0.1,0,1]);
+end
+
+end
+
+function bbs_res = postProcess(I,model,bbs,thresh_IcfIg,thresh_dpm,hMin,horizon,optForAlert)
 if size(bbs,1) == 0
     bbs_res=bbs;
     return;
@@ -142,11 +188,14 @@ bbs = bbs(lim_down<bbs(:,2)+bbs(:,4)*2/3 & lim_up>bbs(:,2)+bbs(:,4)/3,:);
 % run dpm until 1 positive match is found
 bbs_res=zeros(0,5);
 for bbIdx=1:size(bbs,1)
-    if(bbs(bbIdx,5) > thresh_ig)
-        maxScore_ig = 99.2;
+    if(bbs(bbIdx,4)<hMin)
+        continue;
+    end
+    if(bbs(bbIdx,5) > thresh_IcfIg)
+        maxScore_icf = 99.2;
         maxScore_dpm = 2.75;
         bbs_res(end+1,:)=bbs(bbIdx,:);
-        bbs_res(end,5)=((bbs_res(end,5)-thresh_ig)/(maxScore_ig-thresh_ig))...
+        bbs_res(end,5)=((bbs_res(end,5)-thresh_IcfIg)/(maxScore_icf-thresh_IcfIg))...
                         *(maxScore_dpm-thresh_dpm) + thresh_dpm;
         if optForAlert, break; else continue; end
     end

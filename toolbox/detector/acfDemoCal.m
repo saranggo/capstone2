@@ -35,11 +35,11 @@ opts.pBoost.pTree.fracFtrs=1/16; opts.name='models/AcfCaltech';
 pLoad={'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}};
 opts.pLoad = [pLoad 'hRng',[50 inf], 'vRng',[1 1] ];
 
-opts.nWeak=[32 128 512 2048 8192];
-opts.pBoost.pTree.maxDepth=3;
-opts.nNeg=20000;
+opts.nWeak=[32 128 512 2048 8192 32768];
+opts.pBoost.pTree.maxDepth=4;
+opts.nNeg=10000;
 opts.nPerNeg=5;
-opts.nAccNeg=40000;
+opts.nAccNeg=20000;
 
 %% train detector (see acfTrain)
 detector = acfTrain( opts );
@@ -50,7 +50,7 @@ detector = acfModify(detector,'cascThr',-1,'cascCal',-.005);
 %% run detector on a sample image (see acfDetect)
 imgNms=bbGt('getFiles',{[dataDir 'test/images']});
 imgIdx = length(imgNms);
-imgIdx = 1;
+%imgIdx = 1;
 while imgIdx<length(imgNms)
     I=imread(imgNms{imgIdx}); tic, bbs=acfDetect(I,detector); toc
     fh = figure(1); im(I); 

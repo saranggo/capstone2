@@ -41,7 +41,7 @@ if(nargin<3), fileName=''; end; multiple=iscell(I);
 if(~isempty(fileName) && exist(fileName,'file')), bbs=1; return; end
 if(~multiple), bbs=acfDetectImg(I,detector); else
   n=length(I); bbs=cell(n,1);
-  parfor i=1:n, bbs{i}=acfDetectImg(I{i},detector); end
+  parfor i=1:n, bbs{i}=acfDetectImg(I{i},detector); disp(i); end
 end
 
 % write results to disk if fileName specified
