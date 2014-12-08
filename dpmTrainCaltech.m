@@ -45,8 +45,8 @@ conf = cv(conf, 'training.cache_byte_limit', 3*2^30);
 conf.training.log = @(x) sprintf([conf.paths.model_dir '%s.log'], x);
 
 conf = cv(conf, 'training.cache_example_limit', 24000);
-conf = cv(conf, 'training.num_negatives_small', 1000);
-conf = cv(conf, 'training.num_negatives_large', 10000);
+conf = cv(conf, 'training.num_negatives_small', 2000);
+conf = cv(conf, 'training.num_negatives_large', 20000);
 conf = cv(conf, 'training.num_positives', Inf);
 conf = cv(conf, 'training.wlssvm_M', 0);
 conf = cv(conf, 'training.fg_overlap', 0.7);

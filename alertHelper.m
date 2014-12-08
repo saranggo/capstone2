@@ -15,7 +15,7 @@ dt=dt(dt(:,1)<length(gt),:);
 dt=double(dt);
 end
 
-function [prec, tpr, fpr, thresh] = compPlots(gt,dt,style,hold)
+function [prec, tpr, fpr, thresh] = compPlots(gt,dt)
 target=gt(:,end);
 n=length(target);
 ids=dt(:,1); assert(max(ids)<=n);
@@ -35,5 +35,5 @@ p1=p(p(:,2)<-0.749,:);
 p2=p(p(:,2)>-0.749,:);
 [~,ord]=sort(p2(:,2),'ascend');
 p2=p2(ord,:);
-[prec, tpr, fpr, thresh]=prec_rec(scores(:,2),target,'plotROC',1,'plotPR',1,'plotBaseline',0,'style',style,'holdFigure',hold);
+[prec, tpr, fpr, thresh]=prec_rec(scores(:,2),target,'plotBaseline',0);
 end

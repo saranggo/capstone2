@@ -3,27 +3,31 @@ init_env;
 dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 resultFile = 'results/CombineCaltech';
 gtDir = [dataDir 'test/annotations'];
-silent = 0;
-reapply = 1;
+silent = 1;
+reapply = 0;
 rewrite = 0;
-time = 1;
+time = 0;
 showBBTest = 1;
 showAlertTest = 1;
-optForAlert = 0;
-horizon = 220;
-igDpmThresh = 23;
-dpmThresh = -0.75;
-hMin = 50.1;
+optForAlert = 1;
+horizon = 220; %def 220
+igDpmThresh = 23; %def: 23
+dpmThresh = -.75; %def: -0.75
+hMin = 50.1; %def: 50.1 or 55?
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
   'hRng',[hMin inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]];
+
+            %[afterFPDW,afterHoF,afterHeF,afterThresh]
+bbsAfter = zeros(0,4);
 
 %% load acf detector
 t=load('models/AcfCaltechDetector_depth3_8192');
 detector = t.detector;
-detector = acfModify(detector,'cascThr',-1,'cascCal',-.005);
+detector = acfModify(detector,'cascThr',-1,'cascCal',-.004); %def: -.004
 
 %% load dpm model
 t=load('voc-release5/caltechped_final');
+%t=load('voc-release5/person_segDPM_final');
 %t=load('voc-release5/VOC2010/person_final');
 %t=load('VOC2010/person_grammar_final'); t.model.class = 'person grammar';
 dpm_model = t.model;
@@ -40,7 +44,7 @@ if(reapply || ~exist(bbsNm,'file'))
     
     %load n1; load p1; load p2;
     
-    imgIdx = 7130; %55, 333, 369, 530, 740, 7130
+    imgIdx = 1; %55, 333, 369, 530, 740, 7130
     if silent, imgIdx = 1; end
     while imgIdx<length(imgNms)
         I=imread(imgNms{imgIdx});
@@ -48,10 +52,12 @@ if(reapply || ~exist(bbsNm,'file'))
         if ~silent, fh = figure(1); im(I); bbApply('draw',gt{imgIdx}(gt{imgIdx}(:,5)==0,:),'b'); end
         if time, tic; end
         bbs{imgIdx}=acfDetect(I,detector); 
+        bbsAfter(end+1,1)=size(bbs{imgIdx},1);
         if time, toc; end
         if ~silent, bbApply('draw',bbs{imgIdx},'r'); end
         if time, tic, end
-        bbsCombined{imgIdx}=postProcess(I,dpm_model,bbs{imgIdx},...
+        [bbsCombined{imgIdx},bbsAfter(end,2),bbsAfter(end,3),bbsAfter(end,4)]=...
+                            postProcess(I,dpm_model,bbs{imgIdx},...
                             igDpmThresh,dpmThresh,hMin,horizon,optForAlert);
         if time, toc; end
         if ~silent, bbApply('draw',bbsCombined{imgIdx},'g'); end %pause(.1);
@@ -97,6 +103,8 @@ if(reapply || ~exist(bbsNm,'file'))
         dlmwrite(bbsNm,bbs);
     end
 end
+
+bbsAfterSum=sum(bbsAfter);
 
 %% test detector and plot roc (see acfTest)
 if showBBTest && ~optForAlert, [~,~,gt,dt]=acfTest('name',resultFile,'imgDir',[dataDir 'test/images'],...
@@ -163,34 +171,58 @@ if showAlertTest
     end
     dt2(dt2(:,2)==Inf,2)=min(dt2(:,2));
     
-    [prec1, tpr1, fpr1, thresh1] = alertHelper('compPlots',gt1,dt1,'b-x',0);
-    [prec2, tpr2, fpr2, thresh2] = alertHelper('compPlots',gt1,dt2,'g-o',1);
+    [prec1, tpr1, fpr1, thresh1] = alertHelper('compPlots',gt1,dt1);
+    [prec2, tpr2, fpr2, thresh2] = alertHelper('compPlots',gt1,dt2);
     
+    figure;
     subplot(1,2,1);
+    plot([0; tpr1], [1 ; prec1], 'b-x'); % add pseudo point to complete curve
+    hold on;
+    plot([0; tpr2], [1 ; prec2], 'g-o'); % add pseudo point to complete curve
+    xlabel('recall');
+    ylabel('precision');
+    title('precision-recall graph');
     axis([0,1,0,1]);
     subplot(1,2,2);
+    plot([0; fpr1], [0; tpr1], 'b-x');
+    hold on;
+    plot([0; fpr2], [0; tpr2], 'g-o');
+    xlabel('false positive rate');
+    ylabel('true positive rate');
+    title('roc curve');
     axis([0,0.1,0,1]);
+    rect = get(gcf,'pos');
+    rect(3) = 2 * rect(3);
+    set(gcf,'pos',rect);
 end
 
 end
 
-function bbs_res = postProcess(I,model,bbs,thresh_IcfIg,thresh_dpm,hMin,horizon,optForAlert)
+function [bbs_res,afterHoF,afterHeF,afterThresh] = postProcess(I,model,bbs,thresh_IcfIg,thresh_dpm,hMin,horizon,optForAlert)
+afterThresh=0; afterHoF=0; afterHeF=0;
 if size(bbs,1) == 0
     bbs_res=bbs;
     return;
 end
 % apply threshold to bbs
-[h,~,~]=size(I);
-lim_up = horizon + h*0.1;
-lim_down = horizon - h*0.1;
-bbs = bbs(lim_down<bbs(:,2)+bbs(:,4)*2/3 & lim_up>bbs(:,2)+bbs(:,4)/3,:);
-
+if horizon
+    tmpb=size(bbs,1);
+    [h,~,~]=size(I);
+    lim_up = horizon + h*0.05;
+    lim_down = horizon - h*0.05;
+    bbs = bbs(lim_down<(bbs(:,2)+bbs(:,4)*2/3) & lim_up>(bbs(:,2)+bbs(:,4)/3),:);
+    afterHoF=size(bbs,1);
+    if tmpb-afterHoF
+        tmpb-afterHoF;
+    end
+end
 % run dpm until 1 positive match is found
 bbs_res=zeros(0,5);
 for bbIdx=1:size(bbs,1)
     if(bbs(bbIdx,4)<hMin)
         continue;
     end
+    afterHeF = afterHeF + 1;
     if(bbs(bbIdx,5) > thresh_IcfIg)
         maxScore_icf = 99.2;
         maxScore_dpm = 2.75;
@@ -199,6 +231,7 @@ for bbIdx=1:size(bbs,1)
                         *(maxScore_dpm-thresh_dpm) + thresh_dpm;
         if optForAlert, break; else continue; end
     end
+    afterThresh = afterThresh + 1;
     I_bb = I(max(1,bbs(bbIdx,2)):min(size(I,1),bbs(bbIdx,2)+bbs(bbIdx,4)),...
              max(1,bbs(bbIdx,1)):min(size(I,2),bbs(bbIdx,1)+bbs(bbIdx,3)),:);
     scale = 41/size(I_bb,2);

@@ -18,8 +18,10 @@ if(reapply || ~exist(bbsNm,'file'))
     imgNms=bbGt('getFiles',{[dataDir 'test/images']});
     n=length(imgNms)
     bbs = cell(n,1);
-    parfor imgIdx=1:n
-        bbs{imgIdx} = test(imgNms{imgIdx}, model, -0.6);
+    for imgIdx=1:n
+        tic;
+        bbs{imgIdx} = test(imgNms{imgIdx}, model, -0.75);
+        toc;
         disp(imgIdx);
         %pause(0.1);
         %break;

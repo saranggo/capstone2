@@ -12,11 +12,7 @@ function [ds, bs, trees] = imgdetect(im, model, thresh)
 im = color(im);
 pyra = featpyramid(im, model);
 
-if model.features.extra_octave
-    %TODO
-    'TODO'
-else
-    pyra.valid_levels(2:10)=zeros(9,1);
-    pyra.valid_levels(12:20)=zeros(9,1);
-end
+pyra.valid_levels(2:10)=zeros(9,1);
+pyra.valid_levels(12:20)=zeros(9,1);
+    
 [ds, bs, trees] = gdetect(pyra, model, thresh);
