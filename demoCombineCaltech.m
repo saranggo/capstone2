@@ -7,23 +7,26 @@ silent = 1;
 reapply = 0;
 rewrite = 0;
 time = 0;
-showBBTest = 1;
+showBBTest = 0;
 showAlertTest = 1;
-optForAlert = 1;
-horizon = 220; %def 220
-igDpmThresh = 23; %def: 23
-dpmThresh = -.75; %def: -0.75
-hMin = 50.1; %def: 50.1 or 55?
-pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
-  'hRng',[hMin inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]];
 
-            %[afterFPDW,afterHoF,afterHeF,afterThresh]
+optForAlert = 0;
+horizon = 220; %def 220
+igDpmThresh = 0; %def: 23
+hMinThresh = 0;
+
+dpmThresh = -0.9; %def: -0.9
+icfThresh = -0.004; %def: -0.004
+hMin = 55; %def: 55
+pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
+  'hRng',[hMin inf],'vRng',[.95 1],'xRng',[5 635],'yRng',[5 475]];
+
 bbsAfter = zeros(0,4);
 
 %% load acf detector
 t=load('models/AcfCaltechDetector_depth3_8192');
 detector = t.detector;
-detector = acfModify(detector,'cascThr',-1,'cascCal',-.004); %def: -.004
+detector = acfModify(detector,'cascThr',-1,'cascCal',icfThresh);
 
 %% load dpm model
 t=load('voc-release5/caltechped_final');
@@ -51,14 +54,15 @@ if(reapply || ~exist(bbsNm,'file'))
         %I=imread(imgNms{p2(imgIdx,1)});
         if ~silent, fh = figure(1); im(I); bbApply('draw',gt{imgIdx}(gt{imgIdx}(:,5)==0,:),'b'); end
         if time, tic; end
-        bbs{imgIdx}=acfDetect(I,detector); 
+        bbs{imgIdx}=acfDetect(I,detector);
+        %bbs{imgIdx}=bbs{imgIdx}(bbs{imgIdx}(:,4)>hMin,:);
         bbsAfter(end+1,1)=size(bbs{imgIdx},1);
         if time, toc; end
         if ~silent, bbApply('draw',bbs{imgIdx},'r'); end
         if time, tic, end
         [bbsCombined{imgIdx},bbsAfter(end,2),bbsAfter(end,3),bbsAfter(end,4)]=...
                             postProcess(I,dpm_model,bbs{imgIdx},...
-                            igDpmThresh,dpmThresh,hMin,horizon,optForAlert);
+                            igDpmThresh,dpmThresh,hMin,hMinThresh,horizon,optForAlert);
         if time, toc; end
         if ~silent, bbApply('draw',bbsCombined{imgIdx},'g'); end %pause(.1);
         if ~silent
@@ -104,7 +108,7 @@ if(reapply || ~exist(bbsNm,'file'))
     end
 end
 
-bbsAfterSum=sum(bbsAfter);
+bbsAfterSum=sum(bbsAfter)
 
 %% test detector and plot roc (see acfTest)
 if showBBTest && ~optForAlert, [~,~,gt,dt]=acfTest('name',resultFile,'imgDir',[dataDir 'test/images'],...
@@ -117,8 +121,9 @@ if( 0 ), bbGt('cropRes',gt,dt,imgNms,'type','fn','n',50,...
     'show',3,'dims',[20.5, 50]); end
 
 %test detector and plot roc (see acfTest)
-hold on;
-if showBBTest && ~optForAlert, [~,~,gt,dt]=acfTest('name',[resultFile 'Comb'],'imgDir',[dataDir 'test/images'],...
+if showBBTest && ~optForAlert
+   hold on;
+   [~,~,gt,dt]=acfTest('name',[resultFile 'Comb'],'imgDir',[dataDir 'test/images'],...
   'gtDir',gtDir,'pLoad',[{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
   'hRng',[50 inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]],...
   'show',2,'color','b','reapply',0);
@@ -198,7 +203,8 @@ end
 
 end
 
-function [bbs_res,afterHoF,afterHeF,afterThresh] = postProcess(I,model,bbs,thresh_IcfIg,thresh_dpm,hMin,horizon,optForAlert)
+function [bbs_res,afterHoF,afterHeF,afterThresh] = postProcess(I,model,bbs,...
+    thresh_IcfIg,thresh_dpm,hMin,thresh_hMin,horizon,optForAlert)
 afterThresh=0; afterHoF=0; afterHeF=0;
 if size(bbs,1) == 0
     bbs_res=bbs;
@@ -211,24 +217,21 @@ if horizon
     lim_up = horizon + h*0.05;
     lim_down = horizon - h*0.05;
     bbs = bbs(lim_down<(bbs(:,2)+bbs(:,4)*2/3) & lim_up>(bbs(:,2)+bbs(:,4)/3),:);
-    afterHoF=size(bbs,1);
-    if tmpb-afterHoF
-        tmpb-afterHoF;
-    end
 end
+afterHoF=size(bbs,1);
 % run dpm until 1 positive match is found
 bbs_res=zeros(0,5);
 for bbIdx=1:size(bbs,1)
-    if(bbs(bbIdx,4)<hMin)
+    if(thresh_hMin && bbs(bbIdx,4)<hMin)
         continue;
     end
     afterHeF = afterHeF + 1;
-    if(bbs(bbIdx,5) > thresh_IcfIg)
-        maxScore_icf = 99.2;
+    if(thresh_IcfIg && bbs(bbIdx,5) > thresh_IcfIg)
+        maxScore_icf = 105;
         maxScore_dpm = 2.75;
         bbs_res(end+1,:)=bbs(bbIdx,:);
         bbs_res(end,5)=((bbs_res(end,5)-thresh_IcfIg)/(maxScore_icf-thresh_IcfIg))...
-                        *(maxScore_dpm-thresh_dpm) + thresh_dpm;
+                        *(maxScore_dpm-thresh_dpm) + maxScore_dpm;%thresh_dpm;
         if optForAlert, break; else continue; end
     end
     afterThresh = afterThresh + 1;

@@ -3,25 +3,24 @@ dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 gtDir = [dataDir 'test/annotations'];
 hMin=55;
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
-  'hRng',[hMin inf],'vRng',[.65 1],'xRng',[5 635],'yRng',[5 475]];
+  'hRng',[hMin inf],'vRng',[.95 1],'xRng',[5 635],'yRng',[5 475]];
 detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW only','b'},
-          {'results/CombineCaltechCombDets1_23_55_opt_1scale.txt','FPDW + DPM','g'}}
-      
+          {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW + DPM','g'}}
 figure;
 subplot(1,2,1);
 xlabel('recall');
 ylabel('precision');
 title('precision-recall graph');
 axis([0,1,0,1]);
-grid on;
 hold on;
+grid on;
 subplot(1,2,2);
 xlabel('false positive rate');
 ylabel('true positive rate');
 title('roc curve');
 axis([0,0.1,0,1]);
-grid on;
 hold on;
+grid on;
 rect = get(gcf,'pos');
 rect(3) = 2 * rect(3);
 set(gcf,'pos',rect);
