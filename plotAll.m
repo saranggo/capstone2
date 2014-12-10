@@ -4,8 +4,23 @@ gtDir = [dataDir 'test/annotations'];
 hMin=55;
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
   'hRng',[hMin inf],'vRng',[.95 1],'xRng',[5 635],'yRng',[5 475]];
-detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW only','b'},
-          {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW + DPM','g'}}
+
+% detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW only','b'},
+%           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW + DPM','g'}};
+
+detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW baseline','b'},
+          {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM - All filters','g'},
+          {'results/filtering/CombineCaltechCombDets_noFilter.txt','FPDW+DPM - No filters','c'},
+          {'results/filtering/CombineCaltechCombDets_onlyHorizon.txt','FPDW+DPM - Only horizon filter','r'},
+          {'results/filtering/CombineCaltechCombDets_onlyIgThresholdDPM.txt','FPDW+DPM - Only FPDW score filter','k'}};
+
+% detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW baseline','b'},
+%           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM - All filters','g'},
+%           {'results/thresh/CombineCaltechCombDets_noFilter.txt','FPDW+DPM - No filters','c'},
+%           {'results/thresh/CombineCaltechCombDets_onlyHorizon.txt','FPDW+DPM - Only horizon filter','r'},
+%           {'results/thresh/CombineCaltechCombDets_onlyIgThresholdDPM.txt','FPDW+DPM - Only FPDW score filter','m'},
+%           {'results/thresh/CombineCaltechCombDets_onlyOptAlert.txt','FPDW+DPM - Optimization for alert','k'}};
+
 figure;
 subplot(1,2,1);
 xlabel('recall');
@@ -51,11 +66,11 @@ for i=1:numPlots
     subplot(1,2,1);
     plot([0; tpr1], [1 ; prec1], detFiles{i}{3});
     lstringPR{end+1} = detFiles{i}{2};
-    legend(lstringPR);
+    legend(lstringPR, 'Location', 'Best');
     hold on;
     subplot(1,2,2);
     plot([0; fpr1], [0; tpr1], detFiles{i}{3});
     lstringROC{end+1} = detFiles{i}{2};
-    legend(lstringROC);
+    legend(lstringROC, 'Location', 'Best');
     hold on;
 end
