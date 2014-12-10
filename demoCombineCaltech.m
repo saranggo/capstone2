@@ -10,10 +10,10 @@ time = 0;
 showBBTest = 0;
 showAlertTest = 1;
 
-optForAlert = 0;
+optForAlert = 1;
 horizon = 220; %def 220
-igDpmThresh = 0; %def: 23
-hMinThresh = 0;
+igDpmThresh = 23; %def: 23
+hMinThresh = 1;
 
 dpmThresh = -0.9; %def: -0.9
 icfThresh = -0.004; %def: -0.004
