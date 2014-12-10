@@ -1,6 +1,6 @@
 function demoCombineCaltech()
 init_env;
-dataDir = '/tmp/data-USA/';
+dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
 resultFile = 'results/CombineCaltech';
 gtDir = [dataDir 'test/annotations'];
 silent = 1;
@@ -12,7 +12,11 @@ showAlertTest = 1;
 
 optForAlert = 1;
 horizon = 220; %def 220
+<<<<<<< HEAD
 igDpmThresh = 23; %def: 23
+=======
+igDpmThresh = 40; %def: 23
+>>>>>>> 786efdcf6d2156b91446844b8c8a960f1f968d92
 hMinThresh = 1;
 
 dpmThresh = -0.2; %def: -0.9
