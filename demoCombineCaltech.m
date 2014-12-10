@@ -1,6 +1,7 @@
 function demoCombineCaltech()
 init_env;
-dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+%dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+dataDir = '/tmp/data-USA/';
 resultFile = 'results/CombineCaltech';
 gtDir = [dataDir 'test/annotations'];
 silent = 1;
@@ -16,7 +17,7 @@ igDpmThresh = 23; %def: 23
 hMinThresh = 1;
 
 dpmThresh = -0.9; %def: -0.9
-icfThresh = -0.005; %def: -0.004
+icfThresh = -0.004; %def: -0.004
 hMin = 55; %def: 55
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
   'hRng',[hMin inf],'vRng',[.95 1],'xRng',[5 635],'yRng',[5 475]];
@@ -36,11 +37,13 @@ t=load('voc-release5/caltechped_final');
 dpm_model = t.model;
 
 %% run on a images
-[gt,~] = bbGt('loadAll',gtDir,[],pLoad);
 bbsNm=[resultFile 'Dets.txt'];
+bbsNmC=[resultFile 'Comb' 'Dets.txt'];
 imgNms=bbGt('getFiles',{[dataDir 'test/images']});
 if(reapply && rewrite && exist(bbsNm,'file')), delete(bbsNm); end
-if(reapply || ~exist(bbsNm,'file'))
+if exist(bbsNm,'file'), [gt,dt] = bbGt('loadAll',gtDir,bbsNm,pLoad);
+else dt = []; [gt,~] = bbGt('loadAll',gtDir,[],pLoad); end
+if(reapply || ~exist(bbsNmC,'file'))
     n = length(imgNms);
     bbs = cell(n,1);
     bbsCombined = cell(n,1);
@@ -54,7 +57,11 @@ if(reapply || ~exist(bbsNm,'file'))
         %I=imread(imgNms{p2(imgIdx,1)});
         if ~silent, fh = figure(1); im(I); bbApply('draw',gt{imgIdx}(gt{imgIdx}(:,5)==0,:),'b'); end
         if time, tic; end
-        bbs{imgIdx}=acfDetect(I,detector);
+        if isempty(dt)
+            bbs{imgIdx}=acfDetect(I,detector);
+        else
+            bbs{imgIdx}=dt{imgIdx};
+        end
         %bbs{imgIdx}=bbs{imgIdx}(bbs{imgIdx}(:,4)>hMin,:);
         bbsAfter(end+1,1)=size(bbs{imgIdx},1);
         if time, toc; end
@@ -95,16 +102,14 @@ if(reapply || ~exist(bbsNm,'file'))
     end
     
     bbs = bbsCombined;
-    bbsNm=[resultFile 'Comb' 'Dets.txt'];
-    if(exist(bbsNm,'file')), delete(bbsNm); end
     for i=1:n
         if ~isempty(bbs{i}), bbs{i}=[ones(size(bbs{i},1),1)*i bbs{i}]; 
         else bbs{i}=ones(0,6); end
     end
-    if rewrite || ~exist(bbsNm,'file')
+    if rewrite || ~exist(bbsNmC,'file')
         bbs=cell2mat(bbs);
-        d=fileparts(bbsNm); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
-        dlmwrite(bbsNm,bbs);
+        d=fileparts(bbsNmC); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
+        dlmwrite(bbsNmC,bbs);
     end
 end
 

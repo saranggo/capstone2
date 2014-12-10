@@ -1,5 +1,6 @@
 function plotAll()
-dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+%dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+dataDir = '/tmp/data-USA/';
 gtDir = [dataDir 'test/annotations'];
 hMin=55;
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
@@ -20,6 +21,13 @@ detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW: threshold -0.004','b'},
           {'results/fpdw/CombineCaltechCombDets_0.005.txt','FPDW+DPM: FPDW threshold -0.005','r'},
           {'results/fpdw/CombineCaltechDets_0.003.txt','FPDW: threshold -0.003','m'},
           {'results/fpdw/CombineCaltechCombDets_0.003.txt','FPDW+DPM: FPDW threshold -0.003','k'}};
+% 
+% detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW baseline','b'},
+%           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM - All filters','g'},
+%           {'results/dpmThresh/CombineCaltechCombDets_-0.5.txt','FPDW+DPM - No filters','c'},
+%           {'results/dpmThresh/CombineCaltechCombDets_0.0.txt','FPDW+DPM - Only horizon filter','r'},
+%           {'results/dpmThresh/CombineCaltechCombDets_-1.2.txt','FPDW+DPM - Only FPDW score filter','m'},
+%           {'results/dpmThresh/CombineCaltechCombDets_-1.5.txt','FPDW+DPM - Optimization for alert','k'}};
 
 figure;
 subplot(1,2,1);
