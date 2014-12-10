@@ -12,10 +12,10 @@ showAlertTest = 1;
 
 optForAlert = 1;
 horizon = 220; %def 220
-igDpmThresh = 10; %def: 23
+igDpmThresh = 23; %def: 23
 hMinThresh = 1;
 
-dpmThresh = -0.9; %def: -0.9
+dpmThresh = -0.2; %def: -0.9
 icfThresh = -0.004; %def: -0.004
 hMin = 55; %def: 55
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
