@@ -1,6 +1,6 @@
 function demoCombineCaltech()
 init_env;
-dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+dataDir = '/tmp/data-USA/';
 resultFile = 'results/CombineCaltech';
 gtDir = [dataDir 'test/annotations'];
 silent = 1;
