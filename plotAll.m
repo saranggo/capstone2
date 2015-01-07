@@ -1,27 +1,28 @@
 function plotAll()
-%dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
-dataDir = '/tmp/data-USA/';
+dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+%dataDir = '/tmp/data-USA/';
 gtDir = [dataDir 'test/annotations'];
 hMin=55;
 pLoad = [{'lbls',{'person'},'ilbls',{'people'},'squarify',{3,.41}},...
   'hRng',[hMin inf],'vRng',[.95 1],'xRng',[5 635],'yRng',[5 475]];
 
-% detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW only','b'},
-%           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW + DPM','g'}};
-% 
+detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW only','b'},
+          {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW + DPM','g'},
+          {'results/DPMCaltechDets.txt','DPM only','r'}};
+ 
 % detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW baseline','b'},
 %           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM - All filters','g'},
 %           {'results/filtering/CombineCaltechCombDets_noFilter.txt','FPDW+DPM - No filters','c'},
 %           {'results/filtering/CombineCaltechCombDets_onlyHorizon.txt','FPDW+DPM - Only horizon filter','r'},
 %           {'results/filtering/CombineCaltechCombDets_onlyIgThresholdDPM.txt','FPDW+DPM - Only FPDW score filter','k'}};
 
-detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW: threshold -0.004','b'},
-          {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM: FPDW threshold -0.004','g'},
-          {'results/fpdw/CombineCaltechDets_0.005.txt','FPDW: threshold -0.005','c'},
-          {'results/fpdw/CombineCaltechCombDets_0.005.txt','FPDW+DPM: FPDW threshold -0.005','r'},
-          {'results/fpdw/CombineCaltechDets_0.003.txt','FPDW: threshold -0.003','m'},
-          {'results/fpdw/CombineCaltechCombDets_0.003.txt','FPDW+DPM: FPDW threshold -0.003','k'}};
-% 
+% detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW: threshold -0.004','b'},
+%           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM: FPDW threshold -0.004','g'},
+%           {'results/fpdw/CombineCaltechDets_0.005.txt','FPDW: threshold -0.005','c'},
+%           {'results/fpdw/CombineCaltechCombDets_0.005.txt','FPDW+DPM: FPDW threshold -0.005','r'},
+%           {'results/fpdw/CombineCaltechDets_0.003.txt','FPDW: threshold -0.003','m'},
+%           {'results/fpdw/CombineCaltechCombDets_0.003.txt','FPDW+DPM: FPDW threshold -0.003','k'}};
+ 
 % detFiles={{'results/CombineCaltechDets_0.004.txt','FPDW baseline','b'},
 %           {'results/55/CombineCaltechCombDets1_0.004_.95_-.9_23_55.txt','FPDW+DPM - All filters','g'},
 %           {'results/dpmThresh/CombineCaltechCombDets_-0.5.txt','FPDW+DPM - No filters','c'},

@@ -1,7 +1,7 @@
 function demoCombineCaltech()
 init_env;
-%dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
-dataDir = '/tmp/data-USA/';
+dataDir = '/media/Volume_1/capstone2/caltech_ped_dataset/data-USA/';
+%dataDir = '/tmp/data-USA/';
 resultFile = 'results/CombineCaltech';
 gtDir = [dataDir 'test/annotations'];
 silent = 1;
@@ -9,7 +9,9 @@ reapply = 0;
 rewrite = 0;
 time = 0;
 showBBTest = 0;
-showAlertTest = 1;
+showAlertTest = 0;
+showHist = 0;
+if showHist, time = 0; end
 
 optForAlert = 1;
 horizon = 220; %def 220
@@ -47,7 +49,7 @@ if(reapply || ~exist(bbsNmC,'file'))
     n = length(imgNms);
     bbs = cell(n,1);
     bbsCombined = cell(n,1);
-    
+    dts = zeros(n,1);
     %load n1; load p1; load p2;
     
     imgIdx = 1; %55, 333, 369, 530, 740, 7130
@@ -56,13 +58,13 @@ if(reapply || ~exist(bbsNmC,'file'))
         I=imread(imgNms{imgIdx});
         %I=imread(imgNms{p2(imgIdx,1)});
         if ~silent, fh = figure(1); im(I); bbApply('draw',gt{imgIdx}(gt{imgIdx}(:,5)==0,:),'b'); end
-        if time, tic; end
+        if time || showHist, tic; end
         if isempty(dt)
             bbs{imgIdx}=acfDetect(I,detector);
         else
             bbs{imgIdx}=dt{imgIdx};
         end
-        %bbs{imgIdx}=bbs{imgIdx}(bbs{imgIdx}(:,4)>hMin,:);
+        bbs{imgIdx}=bbs{imgIdx}(bbs{imgIdx}(:,4)>hMin,:);
         bbsAfter(end+1,1)=size(bbs{imgIdx},1);
         if time, toc; end
         if ~silent, bbApply('draw',bbs{imgIdx},'r'); end
@@ -70,7 +72,7 @@ if(reapply || ~exist(bbsNmC,'file'))
         [bbsCombined{imgIdx},bbsAfter(end,2),bbsAfter(end,3),bbsAfter(end,4)]=...
                             postProcess(I,dpm_model,bbs{imgIdx},...
                             igDpmThresh,dpmThresh,hMin,hMinThresh,horizon,optForAlert);
-        if time, toc; end
+        if time || showHist, dts(imgIdx) = toc; end
         if ~silent, bbApply('draw',bbsCombined{imgIdx},'g'); end %pause(.1);
         if ~silent
             kkey = get(gcf,'CurrentCharacter');
@@ -111,6 +113,8 @@ if(reapply || ~exist(bbsNmC,'file'))
         d=fileparts(bbsNmC); if(~isempty(d)&&~exist(d,'dir')), mkdir(d); end
         dlmwrite(bbsNmC,bbs);
     end
+    
+    hist(dts,100);
 end
 
 bbsAfterSum=sum(bbsAfter)
