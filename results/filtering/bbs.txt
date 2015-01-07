@@ -1,7 +1,0 @@
-only horizon gilter
-28322       19083       11540       11540
-only ig threshold dpm (23)
-28322       28322       17490       13521
-only opt for alert
-28322       28322       13085       13085
-

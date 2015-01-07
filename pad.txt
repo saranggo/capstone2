@@ -1,3 +1,0 @@
-imgIdx: 530, 740
-detection window width for dpm: 40+
-
